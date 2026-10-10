@@ -1,14 +1,24 @@
 name: fastapi-rag
 
 services:
-  qdrant:
-    container_name: qdrant
-    image: qdrant/qdrant:v1.18.0
+  postgres:
+    container_name: postgres
+    image: pgvector/pgvector:0.8.7-pg18
     restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES__DATABASE}
+      POSTGRES_USER: ${POSTGRES__USER}
+      POSTGRES_PASSWORD: ${POSTGRES__PASSWORD}
     volumes:
-      - qdrant_data:/qdrant/storage
+      - postgres_data:/var/lib/postgresql
     ports:
-      - ${QDRANT__PORT}:6333
+      - ${POSTGRES__PORT}:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
 
   generative:
     container_name: generative
@@ -98,8 +108,8 @@ services:
     ports:
       - ${APP__PORT}:8000
     depends_on:
-      qdrant:
-        condition: service_started
+      postgres:
+        condition: service_healthy
       generative:
         condition: service_healthy
       embedding:
@@ -109,4 +119,4 @@ services:
 
 volumes:
   huggingface_cache:
-  qdrant_data:
+  postgres_data:

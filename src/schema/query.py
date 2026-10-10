@@ -1,8 +1,15 @@
-from pydantic import BaseModel
+from uuid import UUID
+
+from pydantic import BaseModel, Field
 
 
 class QueryRequest(BaseModel):
-    message: str
+    message: str = Field(examples=["What is a quest?"])
+    session_id: UUID | None = Field(
+        default=None,
+        description="Continue an existing conversation; omit to start a new one.",
+        examples=[None],
+    )
 
 
 class RetrievedContext(BaseModel):
@@ -11,5 +18,6 @@ class RetrievedContext(BaseModel):
 
 
 class QueryResponse(BaseModel):
+    session_id: UUID
     answer: str
     retrieved: list[RetrievedContext]

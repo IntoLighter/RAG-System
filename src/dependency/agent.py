@@ -10,8 +10,9 @@ from langchain_openai import ChatOpenAI
 from openai import AsyncOpenAI
 from pydantic import BaseModel, field_validator
 
+from dependency import vector_store as vector_store_dependency
 from dependency.settings import settings
-from dependency.vector_store import vector_store
+from dependency.vector_store import VECTOR_STORE_NOT_INITIALIZED
 from utils import elapsed_ms
 
 logger = structlog.get_logger()
@@ -75,11 +76,12 @@ async def retrieve_knowledge(
     query: str,
 ) -> tuple[str, RetrieveArtifact]:
     """
-    Mandatory tool for retrieving factual context from internal knowledge base.
+    Search the knowledge base of uploaded books for passages about a topic.
 
-    ALWAYS use this tool before answering any question.
-    Input `query` should be a rewritten version of the user question
-    optimized for search.
+    Use it for questions about facts, terms, events or ideas from the books.
+    Do not use it for questions about this conversation itself.
+    `query` must be a standalone search query: resolve pronouns and references
+    to earlier messages, e.g. "tell me more about it" -> "quest structure".
     """
 
     task_description = (
@@ -89,7 +91,9 @@ async def retrieve_knowledge(
     final_query = f"Instruct: {task_description}\nQuery: {query}"
 
     started_at = time.perf_counter()
-    chunks = await vector_store.asimilarity_search(
+    if vector_store_dependency.vector_store is None:
+        raise RuntimeError(VECTOR_STORE_NOT_INITIALIZED)
+    chunks = await vector_store_dependency.vector_store.asimilarity_search(
         final_query,
         k=settings.rag.retrieve_top_k,
     )
@@ -150,23 +154,39 @@ async def retrieve_knowledge(
 
 
 prompt = """
-You are a retrieval-augmented assistant.
+You are an assistant that answers questions about uploaded books.
+You have one tool, `retrieve_knowledge`, which searches the books.
 
-You MUST follow these rules:
+Before answering, decide which kind of message the user sent.
 
-1. For EVERY user question, you MUST first call the tool `retrieve_knowledge`.
-2. You are NOT allowed to answer from your internal knowledge
-   without using the tool first.
-3. Even if you think you know the answer, you still MUST use the tool.
-4. Only after receiving tool output, you may generate the final answer.
-5. If the tool returns no relevant information, say that the information
-   was not found in the knowledge base.
+A. A question about the content of the books: a fact, term, definition,
+   character, event or idea. Examples:
+   - "What is a quest?"
+   - "Что такое квест?"
+   - "How does the author describe the main conflict?"
+   - "Tell me more about the second type" (a follow-up that needs new facts)
+   For these you MUST call `retrieve_knowledge` before answering, even if
+   you think you know the answer. Answer only from the retrieved passages.
+   If they contain nothing relevant, say the information was not found
+   in the knowledge base. Do not use your own knowledge.
 
-Violation of these rules is not allowed.
+B. A message about this conversation itself: what the user asked before,
+   what you answered, a request to repeat, shorten, translate or rephrase
+   a previous answer, greetings and thanks. Examples:
+   - "What did I ask before?"
+   - "Что я спрашивал раньше?"
+   - "Summarize your last answer in one sentence"
+   - "Thanks!"
+   For these DO NOT call any tool. Answer directly from the conversation
+   history above.
 
-Tool usage format:
-- Always call `retrieve_knowledge` with a relevant search query
-  derived from the user question.
+If you are unsure, treat the message as kind A.
+
+When calling `retrieve_knowledge`, write a standalone search query: replace
+pronouns and references like "it" or "the second one" with the actual topic
+from the conversation.
+
+Always answer in the language of the user's last message.
 """
 
 generative = ChatOpenAI(

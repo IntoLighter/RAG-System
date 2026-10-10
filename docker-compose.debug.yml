@@ -1,6 +1,7 @@
 services:
-  qdrant:
+  postgres:
     restart: "no"
+    command: ["postgres", "-c", "log_statement=all"]
 
   embedding:
     restart: "no"
