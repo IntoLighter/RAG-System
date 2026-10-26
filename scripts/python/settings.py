@@ -1,37 +1,17 @@
-import os
+import sys
+from pathlib import Path
 
 from dotenv import load_dotenv
-from pydantic import BaseModel
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from qdrant_client.http.models import Distance
 
-path1 = os.path.abspath(os.path.join(__file__, "..", "..", "..", ".env"))
-path2 = os.path.abspath(os.path.join(__file__, "..", ".env"))
+root = Path(__file__).resolve().parents[2]
 
-load_dotenv(path1)
-load_dotenv(path2, override=True)
+# load_dotenv does not override already set variables, so the priority is:
+# shell environment > scripts/python/.env > root .env
+load_dotenv(Path(__file__).with_name(".env"))
+load_dotenv(root / ".env")
 
+sys.path.append(str(root / "src"))
 
-class QdrantSettings(BaseModel):
-    host: str
-    port: int
-    collection_name: str
-    vector_size: int
-    distance: Distance
+from dependency.settings import settings  # noqa: E402
 
-
-class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        # env_file=(
-        #     os.path.abspath(os.path.join(__file__, "..", "..", "..", ".env")),
-        #     os.path.abspath(os.path.join(__file__, "..", ".env")),
-        # ),
-        env_file_encoding="utf-8",
-        env_nested_delimiter="__",
-        extra="ignore",
-    )
-
-    qdrant: QdrantSettings
-
-
-settings = Settings()
+__all__ = ["settings"]

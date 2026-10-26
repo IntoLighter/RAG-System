@@ -110,7 +110,7 @@ To drop the stored vectors and conversations (locally, override the host from
 `.env`, which points at the compose service):
 
 ```bash
-POSTGRES__HOST=localhost uv run python scripts/python/recreate_collection.py
+uv run python scripts/python/files/recreate_collection.py
 ```
 
 Note: the psycopg async driver (used by both the vector store and the
