@@ -10,9 +10,8 @@ from langchain_openai import ChatOpenAI
 from openai import AsyncOpenAI
 from pydantic import BaseModel, field_validator
 
-from dependency import vector_store as vector_store_dependency
 from dependency.settings import settings
-from dependency.vector_store import VECTOR_STORE_NOT_INITIALIZED
+from dependency.vector_store import vector_store
 from utils import elapsed_ms
 
 logger = structlog.get_logger()
@@ -91,9 +90,7 @@ async def retrieve_knowledge(
     final_query = f"Instruct: {task_description}\nQuery: {query}"
 
     started_at = time.perf_counter()
-    if vector_store_dependency.vector_store is None:
-        raise RuntimeError(VECTOR_STORE_NOT_INITIALIZED)
-    chunks = await vector_store_dependency.vector_store.asimilarity_search(
+    chunks = await vector_store.asimilarity_search(
         final_query,
         k=settings.rag.retrieve_top_k,
     )

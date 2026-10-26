@@ -98,6 +98,16 @@ services:
       retries: 30
       start_period: 600s
 
+  migrations:
+    container_name: migrations
+    build: .
+    restart: "no"
+    env_file: .env
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   api:
     container_name: api
     build: .
@@ -108,8 +118,8 @@ services:
     ports:
       - ${APP__PORT}:8000
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
       generative:
         condition: service_healthy
       embedding:

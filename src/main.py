@@ -2,12 +2,11 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from langchain_postgres import PostgresChatMessageHistory
 
-from dependency.db import close_db_pool, connection_pool, init_db_pool
+from dependency.db import close_db_pool, init_db_pool
 from dependency.logging import configure_logging
 from dependency.settings import settings
-from dependency.vector_store import initialize_vector_store, pg_engine
+from dependency.vector_store import pg_engine
 from middleware.logging import LoggingMiddleware
 from routes import document, query
 
@@ -20,12 +19,6 @@ configure_logging(
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     await init_db_pool()
-    await initialize_vector_store()
-
-    async with connection_pool.connection() as connection:
-        await PostgresChatMessageHistory.acreate_tables(
-            connection, settings.postgres.chat_table_name
-        )
     try:
         yield
     finally:

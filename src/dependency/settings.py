@@ -25,7 +25,6 @@ class PostgresSettings(BaseModel):
     database: str
     user: str
     password: str
-    vector_size: int
     embedding_table_name: str
     chat_table_name: str
 

@@ -9,9 +9,8 @@ from fastapi.responses import JSONResponse
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from transformers import AutoTokenizer
 
-from dependency import vector_store as vector_store_dependency
 from dependency.settings import settings
-from dependency.vector_store import VECTOR_STORE_NOT_INITIALIZED
+from dependency.vector_store import vector_store
 from utils import elapsed_ms
 
 logger = structlog.get_logger()
@@ -82,9 +81,7 @@ async def upload(
     split_elapsed_ms = elapsed_ms(started_at)
 
     started_at = time.perf_counter()
-    if vector_store_dependency.vector_store is None:
-        raise RuntimeError(VECTOR_STORE_NOT_INITIALIZED)
-    await vector_store_dependency.vector_store.aadd_texts(splits)
+    await vector_store.aadd_texts(splits)
     embed_elapsed_ms = elapsed_ms(started_at)
 
     logger.info(

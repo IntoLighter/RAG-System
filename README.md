@@ -24,8 +24,10 @@ Postgres stores two things: the document chunks with their embeddings in the
 `embedding` pgvector table (`PGVectorStore`, HNSW index, cosine distance), and
 the messages of every chat session in the `chat` table
 (`PostgresChatMessageHistory`), so requests sharing a `session_id` keep their
-history. Both tables (and the index) are created on API startup; their names
-come from `POSTGRES__EMBEDDING_TABLE_NAME` and `POSTGRES__CHAT_TABLE_NAME`.
+history. Both tables (and the index) are created by Alembic migrations
+(`scripts/migrations/`), which the one-shot `migrations` compose service
+applies with `alembic upgrade head` before the API starts; their names come
+from `POSTGRES__EMBEDDING_TABLE_NAME` and `POSTGRES__CHAT_TABLE_NAME`.
 
 ## Stack
 
@@ -106,11 +108,13 @@ uv run ruff check .
 uv run ruff format .
 ```
 
-To drop the stored vectors and conversations (locally, override the host from
-`.env`, which points at the compose service):
+To drop the stored vectors and conversations, roll the migrations back and
+apply them again (locally the host comes from `scripts/.env`, since `.env`
+points at the compose service):
 
 ```bash
-uv run python scripts/python/files/recreate_collection.py
+uv run alembic downgrade base
+uv run alembic upgrade head
 ```
 
 Note: the psycopg async driver (used by both the vector store and the
