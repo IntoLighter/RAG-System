@@ -10,8 +10,8 @@
             },
             "pathMappings": [
                 {
-                    "localRoot": "${workspaceFolder}",
-                    "remoteRoot": "/app"
+                    "localRoot": "${workspaceFolder}/apps/api/src",
+                    "remoteRoot": "/app/src"
                 }
             ]
         }

@@ -1,0 +1,11 @@
+[project]
+name = "migrations"
+version = "0.1.0"
+description = "Alembic migrations for the FastAPI RAG database"
+requires-python = ">=3.13"
+dependencies = [
+    "alembic>=1.20.1",
+    "pgvector>=0.3.6",
+    "psycopg[binary]>=3.3.6",
+    "pydantic-settings>=2.13.1",
+]

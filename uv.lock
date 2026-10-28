@@ -6,6 +6,15 @@ resolution-markers = [
     "python_full_version < '3.14'",
 ]
 
+[manifest]
+members = [
+    "api",
+    "migrations",
+]
+
+[manifest.dependency-groups]
+dev = [{ name = "ruff", specifier = ">=0.15.20" }]
+
 [[package]]
 name = "alembic"
 version = "1.20.1"
@@ -48,6 +57,37 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/3b/72/5562aabb8dd7181e8e860622a38bea08d17842b99ecd4c91f84ac95251b0/anyio-4.14.1.tar.gz", hash = "sha256:8d648a3544c1a700e3ff78615cd679e4c5c3f149904287e73687b2596963629e", size = 254831, upload-time = "2026-06-24T20:56:06.017Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b0/7b/90df4a0a816d98d6ea26f559d87836d494a2cf1fcf063be67df50a7bcc30/anyio-4.14.1-py3-none-any.whl", hash = "sha256:4e5533c5b8ff0a24f5d7a176cbe6877129cd183893f66b537f8f227d10527d72", size = 124875, upload-time = "2026-06-24T20:56:04.413Z" },
+]
+
+[[package]]
+name = "api"
+version = "0.1.0"
+source = { virtual = "apps/api" }
+dependencies = [
+    { name = "fastapi", extra = ["all"] },
+    { name = "langchain" },
+    { name = "langchain-core" },
+    { name = "langchain-openai" },
+    { name = "langchain-postgres" },
+    { name = "langchain-text-splitters" },
+    { name = "pydantic-settings" },
+    { name = "pymupdf" },
+    { name = "structlog" },
+    { name = "transformers" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "fastapi", extras = ["all"], specifier = ">=0.135.1" },
+    { name = "langchain", specifier = ">=1.2.10" },
+    { name = "langchain-core", specifier = ">=1.2.17" },
+    { name = "langchain-openai", specifier = ">=0.3.0" },
+    { name = "langchain-postgres", specifier = "==0.0.19" },
+    { name = "langchain-text-splitters", specifier = ">=1.1.1" },
+    { name = "pydantic-settings", specifier = ">=2.13.1" },
+    { name = "pymupdf", specifier = ">=1.24.0" },
+    { name = "structlog", specifier = ">=26.1.0" },
+    { name = "transformers", specifier = ">=5.13.0" },
 ]
 
 [[package]]
@@ -299,47 +339,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/0b/e5/bee77aa542ec66bcc
 wheels = [
     { url = "https://files.pythonhosted.org/packages/75/0c/9e3069ff571142e571d68156aa4c1ab1d51c0b87f21bbe0f44c10029b19b/fastapi_cloud_cli-0.22.1-py3-none-any.whl", hash = "sha256:4ba307b97b08282d1efb2daef5f1e88af23e02fe2286c25273c1794e399df509", size = 77739, upload-time = "2026-07-01T22:09:02.359Z" },
 ]
-
-[[package]]
-name = "fastapi-rag"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "alembic" },
-    { name = "fastapi", extra = ["all"] },
-    { name = "langchain" },
-    { name = "langchain-core" },
-    { name = "langchain-openai" },
-    { name = "langchain-postgres" },
-    { name = "langchain-text-splitters" },
-    { name = "pydantic-settings" },
-    { name = "pymupdf" },
-    { name = "structlog" },
-    { name = "transformers" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "alembic", specifier = ">=1.20.1" },
-    { name = "fastapi", extras = ["all"], specifier = ">=0.135.1" },
-    { name = "langchain", specifier = ">=1.2.10" },
-    { name = "langchain-core", specifier = ">=1.2.17" },
-    { name = "langchain-openai", specifier = ">=0.3.0" },
-    { name = "langchain-postgres", specifier = "==0.0.19" },
-    { name = "langchain-text-splitters", specifier = ">=1.1.1" },
-    { name = "pydantic-settings", specifier = ">=2.13.1" },
-    { name = "pymupdf", specifier = ">=1.24.0" },
-    { name = "structlog", specifier = ">=26.1.0" },
-    { name = "transformers", specifier = ">=5.13.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [{ name = "ruff", specifier = ">=0.15.20" }]
 
 [[package]]
 name = "fastar"
@@ -945,6 +944,25 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/d6/54/cfe61301667036ec958cb99bd3efefba235e65cdeb9c84d24a8293ba1d90/mdurl-0.1.2.tar.gz", hash = "sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba", size = 8729, upload-time = "2022-08-14T12:40:10.846Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8", size = 9979, upload-time = "2022-08-14T12:40:09.779Z" },
+]
+
+[[package]]
+name = "migrations"
+version = "0.1.0"
+source = { virtual = "apps/migrations" }
+dependencies = [
+    { name = "alembic" },
+    { name = "pgvector" },
+    { name = "psycopg", extra = ["binary"] },
+    { name = "pydantic-settings" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "alembic", specifier = ">=1.20.1" },
+    { name = "pgvector", specifier = ">=0.3.6" },
+    { name = "psycopg", extras = ["binary"], specifier = ">=3.3.6" },
+    { name = "pydantic-settings", specifier = ">=2.13.1" },
 ]
 
 [[package]]

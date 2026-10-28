@@ -1,10 +1,10 @@
 from logging.config import fileConfig
 
 from alembic import context
-
-# scripts is on sys.path via prepend_sys_path in alembic.ini
-from settings import settings
 from sqlalchemy import URL, create_engine, pool
+
+# this directory is on sys.path via prepend_sys_path in alembic.ini
+from settings import settings
 
 config = context.config
 

@@ -17,6 +17,6 @@ services:
     restart: "no"
     env_file: .env.debug    
     volumes:
-      - ./src:/app/src
+      - ./apps/api/src:/app/src
     ports:
       - 5678:5678

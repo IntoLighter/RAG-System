@@ -1,10 +1,12 @@
-.venv
-.history
-.git
-.gitignore
-__pycache__
-*.pyc
-*.pyo
-.env_secrets
-agent-tools
-terminals
+# Allowlist: only what the Dockerfiles copy or mount gets into the build context
+*
+!pyproject.toml
+!uv.lock
+!alembic.ini
+!apps/
+
+**/.env
+**/.env.*
+**/.venv
+**/__pycache__
+**/*.py[co]

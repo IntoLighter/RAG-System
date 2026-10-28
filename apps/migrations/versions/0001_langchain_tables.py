@@ -14,7 +14,6 @@ from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
-from langchain_postgres.v2.indexes import DEFAULT_INDEX_NAME_SUFFIX
 from pgvector.sqlalchemy import Vector
 from sqlalchemy.dialects import postgresql
 
@@ -27,10 +26,12 @@ depends_on: str | Sequence[str] | None = None
 # instead of being read from settings. Table names must match
 # POSTGRES__EMBEDDING_TABLE_NAME and POSTGRES__CHAT_TABLE_NAME, and the
 # vector size must match the embedding model; changing any of them needs
-# a new revision.
+# a new revision. The index suffix is DEFAULT_INDEX_NAME_SUFFIX of
+# langchain-postgres 0.0.19.
 embedding_table = "embedding"
 chat_table = "chat"
 vector_size = 1024
+index_suffix = "langchainvectorindex"
 
 
 def upgrade() -> None:
@@ -49,7 +50,7 @@ def upgrade() -> None:
     )
     # PGVectorStore looks the index up by this name in ``ais_valid_index``.
     op.create_index(
-        embedding_table + DEFAULT_INDEX_NAME_SUFFIX,
+        embedding_table + index_suffix,
         embedding_table,
         ["embedding"],
         postgresql_using="hnsw",

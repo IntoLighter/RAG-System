@@ -1,27 +1,13 @@
-[project]
-name = "fastapi-rag"
-version = "0.1.0"
-description = "Add your description here"
-readme = "README.md"
-requires-python = ">=3.13"
-dependencies = [
-    "alembic>=1.20.1",
-    "fastapi[all]>=0.135.1",
-    "langchain>=1.2.10",
-    "langchain-core>=1.2.17",
-    "langchain-openai>=0.3.0",
-    "langchain-postgres==0.0.19",
-    "langchain-text-splitters>=1.1.1",
-    "pydantic-settings>=2.13.1",
-    "pymupdf>=1.24.0",
-    "structlog>=26.1.0",
-    "transformers>=5.13.0",
-]
+[tool.uv.workspace]
+members = ["apps/api", "apps/migrations"]
 
 [dependency-groups]
 dev = [
     "ruff>=0.15.20",
 ]
+
+[tool.ruff]
+src = ["apps/api/src", "apps/migrations"]
 
 [tool.ruff.lint]
 select = ["ALL"]
@@ -29,3 +15,4 @@ ignore = ["D1", "D200", "D202", "D203", "D212", "RET504", "COM812", "ANN401"]
 
 [tool.ruff.lint.per-file-ignores]
 "scripts/**" = ["INP001"]
+"apps/migrations/**" = ["INP001"]

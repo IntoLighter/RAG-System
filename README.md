@@ -25,7 +25,7 @@ Postgres stores two things: the document chunks with their embeddings in the
 the messages of every chat session in the `chat` table
 (`PostgresChatMessageHistory`), so requests sharing a `session_id` keep their
 history. Both tables (and the index) are created by Alembic migrations
-(`scripts/migrations/`), which the one-shot `migrations` compose service
+(`apps/migrations/`), which the one-shot `migrations` compose service
 applies with `alembic upgrade head` before the API starts; their names come
 from `POSTGRES__EMBEDDING_TABLE_NAME` and `POSTGRES__CHAT_TABLE_NAME`.
 
@@ -95,10 +95,16 @@ pool and passed to the agent on the next request.
 
 ## Development
 
-Install dependencies with [uv](https://docs.astral.sh/uv/):
+The repository is a [uv](https://docs.astral.sh/uv/) workspace with one
+lockfile and two members, each with its own dependencies and Dockerfile:
+
+* `apps/api` — the FastAPI service
+* `apps/migrations` — the Alembic migrations
+
+Install the dependencies of both:
 
 ```bash
-uv sync
+uv sync --all-packages
 ```
 
 Run linting and formatting:
@@ -109,8 +115,8 @@ uv run ruff format .
 ```
 
 To drop the stored vectors and conversations, roll the migrations back and
-apply them again (locally the host comes from `scripts/.env`, since `.env`
-points at the compose service):
+apply them again (locally the host comes from `apps/migrations/.env`, since
+`.env` points at the compose service):
 
 ```bash
 uv run alembic downgrade base

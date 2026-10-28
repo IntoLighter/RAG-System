@@ -100,17 +100,20 @@ services:
 
   migrations:
     container_name: migrations
-    build: .
+    build:
+      context: .
+      dockerfile: apps/migrations/Dockerfile
     restart: "no"
     env_file: .env
-    command: ["alembic", "upgrade", "head"]
     depends_on:
       postgres:
         condition: service_healthy
 
   api:
     container_name: api
-    build: .
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
     restart: unless-stopped
     env_file: .env
     volumes:
