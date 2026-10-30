@@ -50,7 +50,10 @@ def configure_logging(
     root_logger.handlers = [handler]
     root_logger.setLevel(level)
 
-    for name in ("uvicorn", "uvicorn.error", "uvicorn.access"):
+    for name in ("uvicorn", "uvicorn.error"):
         uvicorn_logger = logging.getLogger(name)
         uvicorn_logger.handlers = [handler]
         uvicorn_logger.propagate = False
+
+    # LoggingMiddleware already logs every request, so the access log is a duplicate
+    logging.getLogger("uvicorn.access").disabled = True

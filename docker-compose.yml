@@ -87,6 +87,8 @@ services:
     command: >
       ${RERANKER__NAME}
       --runner pooling
+      --hf-overrides '{"architectures": ["Qwen3ForSequenceClassification"], "classifier_from_token": ["no", "yes"], "is_original_qwen3_reranker": true}'
+      --chat-template /vllm-workspace/examples/pooling/score/template/qwen3_reranker.jinja
       --gpu-memory-utilization ${RERANKER__GPU_MEMORY_UTILIZATION}
       --max-model-len ${RERANKER__MAX_MODEL_LEN}
       --max-num-seqs ${RERANKER__MAX_NUM_SEQS}

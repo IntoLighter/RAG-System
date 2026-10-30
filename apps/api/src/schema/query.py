@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 
 class QueryRequest(BaseModel):
-    message: str = Field(examples=["What is a quest?"])
+    message: str = Field(examples=["Что такое квест?"])
     session_id: UUID | None = Field(
         default=None,
         description="Continue an existing conversation; omit to start a new one.",

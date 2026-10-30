@@ -43,6 +43,10 @@ class PostgresSettings(BaseModel):
 class GenerativeSettings(BaseModel):
     name: str
     base_url: str
+    temperature: float
+    top_p: float
+    max_tokens: int
+    enable_thinking: bool
 
 
 class EmbeddingSettings(BaseModel):

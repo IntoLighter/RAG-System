@@ -190,6 +190,14 @@ generative = ChatOpenAI(
     model=settings.generative.name,
     base_url=settings.generative.base_url,
     api_key="EMPTY",
+    temperature=settings.generative.temperature,
+    top_p=settings.generative.top_p,
+    max_tokens=settings.generative.max_tokens,
+    extra_body={
+        "chat_template_kwargs": {
+            "enable_thinking": settings.generative.enable_thinking,
+        },
+    },
 )
 
 agent = create_agent(generative, [retrieve_knowledge], system_prompt=prompt)

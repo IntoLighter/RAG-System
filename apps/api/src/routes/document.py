@@ -7,7 +7,7 @@ import structlog
 from fastapi import APIRouter, HTTPException, UploadFile, status
 from fastapi.responses import JSONResponse
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from transformers import AutoTokenizer
+from tokenizers import Tokenizer
 
 from dependency.settings import settings
 from dependency.vector_store import vector_store
@@ -17,13 +17,18 @@ logger = structlog.get_logger()
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
-tokenizer = AutoTokenizer.from_pretrained(settings.embedding.name)
+tokenizer = Tokenizer.from_pretrained(settings.embedding.name)
 
-text_splitter = RecursiveCharacterTextSplitter.from_huggingface_tokenizer(
-    tokenizer=tokenizer,
+
+def _token_length(text: str) -> int:
+    return len(tokenizer.encode(text, add_special_tokens=False).ids)
+
+
+text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=settings.rag.chunk_size,
     chunk_overlap=settings.rag.chunk_overlap,
     separators=settings.rag.separators,
+    length_function=_token_length,
 )
 
 

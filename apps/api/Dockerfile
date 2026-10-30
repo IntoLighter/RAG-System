@@ -17,8 +17,6 @@ COPY apps/api/src ./src
 
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONPATH=/app/src
-# Only tokenizers are used, so the "PyTorch was not found" advice is noise
-ENV TRANSFORMERS_NO_ADVISORY_WARNINGS=1
 
 ENTRYPOINT []
 
