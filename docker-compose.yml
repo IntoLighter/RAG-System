@@ -116,6 +116,8 @@ services:
       dockerfile: apps/api/Dockerfile
     restart: unless-stopped
     env_file: .env
+    environment:
+      HF_TOKEN: ${HF_TOKEN:-}
     volumes:
       - huggingface_cache:/root/.cache/huggingface
     ports:
