@@ -1,4 +1,4 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from dependency.db import close_db_pool, init_db_pool
 from dependency.logging import configure_logging
 from dependency.settings import settings
-from dependency.vector_store import pg_engine
+from dependency.vector_store import init_vector_store, pg_engine
 from middleware.logging import LoggingMiddleware
 from routes import document, query
 
@@ -17,8 +17,9 @@ configure_logging(
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+async def lifespan(_: FastAPI) -> AsyncGenerator[None]:
     await init_db_pool()
+    await init_vector_store()
     try:
         yield
     finally:

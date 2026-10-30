@@ -11,10 +11,12 @@ from openai import AsyncOpenAI
 from pydantic import BaseModel, field_validator
 
 from dependency.settings import settings
-from dependency.vector_store import vector_store
+from dependency.vector_store import get_vector_store
 from utils import elapsed_ms
 
 logger = structlog.get_logger()
+
+DOCUMENT_PREVIEW_CHARS = 100
 
 
 client = AsyncOpenAI(
@@ -59,17 +61,6 @@ class RetrieveArtifact:
     chunks: list[str]
 
 
-async def get_hyde_query(query: str) -> str:
-    hyde_prompt = f"""
-    Write a detailed textbook-style passage that answers the question.
-
-    Question: {query}
-
-    Answer:
-    """
-    return await generative.ainvoke(hyde_prompt).content
-
-
 @tool(response_format="content_and_artifact")
 async def retrieve_knowledge(
     query: str,
@@ -90,7 +81,7 @@ async def retrieve_knowledge(
     final_query = f"Instruct: {task_description}\nQuery: {query}"
 
     started_at = time.perf_counter()
-    chunks = await vector_store.asimilarity_search(
+    chunks = await get_vector_store().asimilarity_search(
         final_query,
         k=settings.rag.retrieve_top_k,
     )
@@ -98,14 +89,9 @@ async def retrieve_knowledge(
 
     logger.info(
         "semantic_search_finished",
-        query=final_query,
+        query=query,
         count=len(chunks),
         elapsed_ms=search_elapsed_ms,
-    )
-    logger.debug(
-        "semantic_search_documents",
-        query=final_query,
-        documents=[doc.page_content for doc in chunks],
     )
 
     doc_texts = [d.page_content for d in chunks]
@@ -114,10 +100,19 @@ async def retrieve_knowledge(
     reranked_documents = await rerank(query, doc_texts)
     rerank_elapsed_ms = elapsed_ms(started_at)
 
+    relevant_docs = [
+        d
+        for d in reranked_documents
+        if d.relevance_score >= settings.rag.rerank_min_score
+    ]
+    rerank_top_k_docs = relevant_docs[: settings.rag.rerank_top_k]
+    rerank_top_k_texts = [d.document for d in rerank_top_k_docs]
+
     logger.info(
         "rerank_finished",
-        query=query,
         count=len(reranked_documents),
+        relevant=len(relevant_docs),
+        returned=len(rerank_top_k_docs),
         top_score=max(
             (result.relevance_score for result in reranked_documents),
             default=None,
@@ -126,24 +121,24 @@ async def retrieve_knowledge(
     )
     logger.debug(
         "rerank_documents",
-        query=query,
         documents=[
             {
-                "index": result.index,
-                "score": result.relevance_score,
-                "content": result.document,
+                "search_rank": result.index,
+                "score": round(result.relevance_score, 3),
+                "preview": result.document[:DOCUMENT_PREVIEW_CHARS],
             }
             for result in reranked_documents
         ],
     )
 
-    rerank_top_k_docs = reranked_documents[: settings.rag.rerank_top_k]
-    rerank_top_k_texts = [d.document for d in rerank_top_k_docs]
-
     chunks = rerank_top_k_texts
-    response = "\n\n".join(
-        f"[Document {i}]\n{doc}" for i, doc in enumerate(chunks, start=1)
-    )
+    if not chunks:
+        response = "No relevant passages were found in the knowledge base."
+    else:
+        response = "\n\n".join(
+            f"[Document {i}]\n{doc}" for i, doc in enumerate(chunks, start=1)
+        )
+
     return response, RetrieveArtifact(
         query=query,
         chunks=chunks,
@@ -190,6 +185,14 @@ generative = ChatOpenAI(
     model=settings.generative.name,
     base_url=settings.generative.base_url,
     api_key="EMPTY",
+    temperature=settings.generative.temperature,
+    top_p=settings.generative.top_p,
+    max_tokens=settings.generative.max_tokens,
+    extra_body={
+        "chat_template_kwargs": {
+            "enable_thinking": settings.generative.enable_thinking,
+        },
+    },
 )
 
 agent = create_agent(generative, [retrieve_knowledge], system_prompt=prompt)

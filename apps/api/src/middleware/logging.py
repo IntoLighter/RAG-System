@@ -22,7 +22,10 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         """Bind a request id, time the request, and log the outcome."""
         structlog.contextvars.clear_contextvars()
         request_id = request.headers.get(REQUEST_ID_HEADER) or str(uuid.uuid4())
-        structlog.contextvars.bind_contextvars(request_id=request_id)
+        structlog.contextvars.bind_contextvars(
+            request_id=request_id,
+            client=request.client.host if request.client else None,
+        )
 
         logger = structlog.get_logger()
         started_at = time.perf_counter()

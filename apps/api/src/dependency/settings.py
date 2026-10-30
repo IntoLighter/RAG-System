@@ -11,6 +11,7 @@ class RagSettings(BaseModel):
     separators: list[str]
     retrieve_top_k: int
     rerank_top_k: int
+    rerank_min_score: float
 
 
 class AppSettings(BaseModel):
@@ -43,6 +44,10 @@ class PostgresSettings(BaseModel):
 class GenerativeSettings(BaseModel):
     name: str
     base_url: str
+    temperature: float
+    top_p: float
+    max_tokens: int
+    enable_thinking: bool
 
 
 class EmbeddingSettings(BaseModel):

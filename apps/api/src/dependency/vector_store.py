@@ -18,8 +18,21 @@ embedding = OpenAIEmbeddings(
     check_embedding_ctx_length=False,
 )
 
-vector_store: PGVectorStore = PGVectorStore.create_sync(
-    pg_engine,
-    embedding_service=embedding,
-    table_name=settings.postgres.embedding_table_name,
-)
+VECTOR_STORE_NOT_INITIALIZED = "Vector store is not initialized, call init_vector_store"
+
+_vector_store: PGVectorStore | None = None
+
+
+async def init_vector_store() -> None:
+    global _vector_store  # noqa: PLW0603
+    _vector_store = await PGVectorStore.create(
+        pg_engine,
+        embedding_service=embedding,
+        table_name=settings.postgres.embedding_table_name,
+    )
+
+
+def get_vector_store() -> PGVectorStore:
+    if _vector_store is None:
+        raise RuntimeError(VECTOR_STORE_NOT_INITIALIZED)
+    return _vector_store

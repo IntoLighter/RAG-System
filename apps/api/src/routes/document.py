@@ -1,29 +1,36 @@
 import asyncio
 import re
 import time
+from typing import Annotated
 
 import pymupdf
 import structlog
-from fastapi import APIRouter, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from fastapi.responses import JSONResponse
+from langchain_core.vectorstores import VectorStore
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from transformers import AutoTokenizer
+from tokenizers import Tokenizer
 
 from dependency.settings import settings
-from dependency.vector_store import vector_store
+from dependency.vector_store import get_vector_store
 from utils import elapsed_ms
 
 logger = structlog.get_logger()
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
-tokenizer = AutoTokenizer.from_pretrained(settings.embedding.name)
+tokenizer = Tokenizer.from_pretrained(settings.embedding.name)
 
-text_splitter = RecursiveCharacterTextSplitter.from_huggingface_tokenizer(
-    tokenizer=tokenizer,
+
+def _token_length(text: str) -> int:
+    return len(tokenizer.encode(text, add_special_tokens=False).ids)
+
+
+text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=settings.rag.chunk_size,
     chunk_overlap=settings.rag.chunk_overlap,
     separators=settings.rag.separators,
+    length_function=_token_length,
 )
 
 
@@ -52,6 +59,7 @@ def post_clean(text: str) -> str:
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def upload(
     file: UploadFile,
+    vector_store: Annotated[VectorStore, Depends(get_vector_store)],
 ) -> JSONResponse:
     """To upload russian or english books."""
 
@@ -87,6 +95,7 @@ async def upload(
     logger.info(
         "document_indexed",
         filename=file.filename,
+        size_bytes=len(content),
         pages=pages,
         chars=len(full_text),
         chunks=len(splits),

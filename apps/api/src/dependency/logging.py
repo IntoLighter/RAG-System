@@ -11,6 +11,7 @@ def configure_logging(
 ) -> None:
     shared_processors = [
         structlog.contextvars.merge_contextvars,
+        structlog.stdlib.add_logger_name,
         structlog.processors.add_log_level,
         structlog.processors.StackInfoRenderer(),
         structlog.dev.set_exc_info,
@@ -19,6 +20,7 @@ def configure_logging(
 
     structlog.configure(
         processors=[
+            structlog.stdlib.filter_by_level,
             *shared_processors,
             structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
         ],
@@ -50,7 +52,13 @@ def configure_logging(
     root_logger.handlers = [handler]
     root_logger.setLevel(level)
 
-    for name in ("uvicorn", "uvicorn.error", "uvicorn.access"):
+    for name in ("uvicorn", "uvicorn.error"):
         uvicorn_logger = logging.getLogger(name)
         uvicorn_logger.handlers = [handler]
         uvicorn_logger.propagate = False
+
+    # LoggingMiddleware already logs every request, so the access log is a duplicate
+    logging.getLogger("uvicorn.access").disabled = True
+
+    # httpx logs every call to vLLM at INFO, timings are logged by the app itself
+    logging.getLogger("httpx").setLevel(logging.WARNING)
