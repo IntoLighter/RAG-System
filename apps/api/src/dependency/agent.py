@@ -12,6 +12,7 @@ from pydantic import BaseModel, field_validator
 
 from dependency.settings import settings
 from dependency.vector_store import get_vector_store
+from schema.query import RetrievedChunk
 from utils import elapsed_ms
 
 logger = structlog.get_logger()
@@ -58,7 +59,14 @@ async def rerank(query: str, docs: list[str]) -> list[RerankResult]:
 @dataclass
 class RetrieveArtifact:
     query: str
-    chunks: list[str]
+    chunks: list[RetrievedChunk]
+
+
+def _format_chunk(number: int, chunk: RetrievedChunk) -> str:
+    source = chunk.filename or "unknown source"
+    if chunk.page is not None:
+        source += f", p. {chunk.page}"
+    return f"[Document {number}] ({source})\n{chunk.content}"
 
 
 @tool(response_format="content_and_artifact")
@@ -106,7 +114,6 @@ async def retrieve_knowledge(
         if d.relevance_score >= settings.rag.rerank_min_score
     ]
     rerank_top_k_docs = relevant_docs[: settings.rag.rerank_top_k]
-    rerank_top_k_texts = [d.document for d in rerank_top_k_docs]
 
     logger.info(
         "rerank_finished",
@@ -131,17 +138,25 @@ async def retrieve_knowledge(
         ],
     )
 
-    chunks = rerank_top_k_texts
-    if not chunks:
+    retrieved = [
+        RetrievedChunk(
+            content=d.document,
+            filename=chunks[d.index].metadata.get("filename"),
+            page=chunks[d.index].metadata.get("page"),
+            score=d.relevance_score,
+        )
+        for d in rerank_top_k_docs
+    ]
+    if not retrieved:
         response = "No relevant passages were found in the knowledge base."
     else:
         response = "\n\n".join(
-            f"[Document {i}]\n{doc}" for i, doc in enumerate(chunks, start=1)
+            _format_chunk(i, chunk) for i, chunk in enumerate(retrieved, start=1)
         )
 
     return response, RetrieveArtifact(
         query=query,
-        chunks=chunks,
+        chunks=retrieved,
     )
 
 
@@ -177,6 +192,10 @@ If you are unsure, treat the message as kind A.
 When calling `retrieve_knowledge`, write a standalone search query: replace
 pronouns and references like "it" or "the second one" with the actual topic
 from the conversation.
+
+Each retrieved passage is labeled with its source, e.g.
+"[Document 1] (book.pdf, p. 42)". After each fact taken from a passage,
+cite the source in parentheses, e.g. "(book.pdf, p. 42)".
 
 Always answer in the language of the user's last message.
 """

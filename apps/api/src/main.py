@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from dependency.db import close_db_pool, init_db_pool
 from dependency.logging import configure_logging
 from dependency.settings import settings
-from dependency.vector_store import init_vector_store, pg_engine
+from dependency.vector_store import init_vector_store
 from middleware.logging import LoggingMiddleware
 from routes import document, query
 
@@ -24,7 +24,6 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None]:
         yield
     finally:
         await close_db_pool()
-        await pg_engine.close()
 
 
 app = FastAPI(title="FastAPI RAG", lifespan=lifespan)

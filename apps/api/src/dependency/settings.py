@@ -9,6 +9,7 @@ class RagSettings(BaseModel):
     chunk_size: int
     chunk_overlap: int
     separators: list[str]
+    page_separator: str
     retrieve_top_k: int
     rerank_top_k: int
     rerank_min_score: float

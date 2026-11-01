@@ -12,6 +12,7 @@ dependencies = [
     "langchain-text-splitters>=1.1.1",
     "pydantic-settings>=2.13.1",
     "pymupdf>=1.24.0",
+    "sqlmodel>=0.0.48",
     "structlog>=26.1.0",
     "tokenizers>=0.22",
 ]

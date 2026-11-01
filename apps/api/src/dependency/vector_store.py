@@ -1,15 +1,11 @@
 from langchain_openai import OpenAIEmbeddings
 from langchain_postgres.v2.engine import PGEngine
 from langchain_postgres.v2.vectorstores import PGVectorStore
-from psycopg.conninfo import conninfo_to_dict
 
+from dependency.db import engine
 from dependency.settings import settings
 
-pg_engine = PGEngine.from_connection_string(
-    "postgresql+psycopg://",
-    connect_args=conninfo_to_dict(settings.postgres.conninfo),
-    pool_pre_ping=True,
-)
+pg_engine = PGEngine.from_engine(engine)
 
 embedding = OpenAIEmbeddings(
     model=settings.embedding.name,
@@ -20,6 +16,8 @@ embedding = OpenAIEmbeddings(
 
 VECTOR_STORE_NOT_INITIALIZED = "Vector store is not initialized, call init_vector_store"
 
+METADATA_COLUMNS = ["document_id", "filename", "page"]
+
 _vector_store: PGVectorStore | None = None
 
 
@@ -29,6 +27,7 @@ async def init_vector_store() -> None:
         pg_engine,
         embedding_service=embedding,
         table_name=settings.postgres.embedding_table_name,
+        metadata_columns=METADATA_COLUMNS,
     )
 
 

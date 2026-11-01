@@ -12,9 +12,16 @@ class QueryRequest(BaseModel):
     )
 
 
+class RetrievedChunk(BaseModel):
+    content: str
+    filename: str | None
+    page: int | None
+    score: float
+
+
 class RetrievedContext(BaseModel):
     query: str
-    chunks: list[str]
+    chunks: list[RetrievedChunk]
 
 
 class QueryResponse(BaseModel):
