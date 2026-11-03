@@ -1,7 +1,9 @@
 from collections.abc import AsyncIterator
 
 import psycopg_pool
+from psycopg import AsyncConnection
 from psycopg.conninfo import conninfo_to_dict
+from psycopg.rows import DictRow, dict_row
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -13,12 +15,13 @@ engine = create_async_engine(
     pool_pre_ping=True,
 )
 
-# PostgresChatMessageHistory accepts only a psycopg connection
 connection_pool = psycopg_pool.AsyncConnectionPool(
     conninfo=settings.postgres.conninfo,
     open=False,
     min_size=1,
     max_size=20,
+    connection_class=AsyncConnection[DictRow],
+    kwargs={"row_factory": dict_row},
 )
 
 

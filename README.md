@@ -22,12 +22,14 @@ A RAG service built with FastAPI, LangChain, PostgreSQL with pgvector, and Qwen 
 
 Postgres stores two things: the document chunks with their embeddings in the
 `embedding` pgvector table (`PGVectorStore`, HNSW index, cosine distance), and
-the messages of every chat session in the `chat` table
-(`PostgresChatMessageHistory`), so requests sharing a `session_id` keep their
-history. Both tables (and the index) are created by Alembic migrations
+the state of every chat session in the `checkpoint*` tables (LangGraph
+`AsyncPostgresSaver`, `session_id` is the thread id), so requests sharing a
+`session_id` keep their history. All tables are created by Alembic migrations
 (`apps/migrations/`), which the one-shot `migrations` compose service
-applies with `alembic upgrade head` before the API starts; their names come
-from `POSTGRES__EMBEDDING_TABLE_NAME` and `POSTGRES__CHAT_TABLE_NAME`.
+applies with `alembic upgrade head` before the API starts; the embedding table
+name comes from `POSTGRES__EMBEDDING_TABLE_NAME`. The API checks on startup
+that the checkpoint schema matches the installed langgraph-checkpoint-postgres,
+so its upgrade with new migrations needs a new Alembic revision.
 
 ## Stack
 

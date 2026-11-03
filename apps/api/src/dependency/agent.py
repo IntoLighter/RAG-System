@@ -7,9 +7,12 @@ import structlog
 from langchain.agents import create_agent
 from langchain.tools import tool
 from langchain_openai import ChatOpenAI
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langgraph.graph.state import CompiledStateGraph
 from openai import AsyncOpenAI
 from pydantic import BaseModel, field_validator
 
+from dependency.db import connection_pool
 from dependency.settings import settings
 from dependency.vector_store import get_vector_store
 from schema.query import RetrievedChunk
@@ -214,4 +217,41 @@ generative = ChatOpenAI(
     },
 )
 
-agent = create_agent(generative, [retrieve_knowledge], system_prompt=prompt)
+
+AGENT_NOT_INITIALIZED = "Agent is not initialized, call init_agent"
+CHECKPOINT_SCHEMA_OUTDATED = (
+    "Checkpoint tables are at version {actual}, langgraph expects {expected}: "
+    "add a migration for the new langgraph-checkpoint-postgres version"
+)
+
+_agent: CompiledStateGraph | None = None
+
+
+async def _check_checkpoint_schema() -> None:
+    """Fail fast if a langgraph upgrade brought migrations the database lacks."""
+    expected = len(AsyncPostgresSaver.MIGRATIONS) - 1
+    async with connection_pool.connection() as conn:
+        cursor = await conn.execute("SELECT max(v) AS v FROM checkpoint_migrations")
+        row = await cursor.fetchone()
+    actual = row["v"] if row else None
+    if actual != expected:
+        raise RuntimeError(
+            CHECKPOINT_SCHEMA_OUTDATED.format(actual=actual, expected=expected),
+        )
+
+
+async def init_agent() -> None:
+    global _agent  # noqa: PLW0603
+    await _check_checkpoint_schema()
+    _agent = create_agent(
+        generative,
+        [retrieve_knowledge],
+        system_prompt=prompt,
+        checkpointer=AsyncPostgresSaver(connection_pool),
+    )
+
+
+def get_agent() -> CompiledStateGraph:
+    if _agent is None:
+        raise RuntimeError(AGENT_NOT_INITIALIZED)
+    return _agent
