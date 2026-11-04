@@ -1,13 +1,22 @@
 import time
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
 
 import httpx
 import structlog
 from langchain.agents import create_agent
+from langchain.agents.middleware import (
+    AgentMiddleware,
+    ModelCallResult,
+    ModelRequest,
+    ModelResponse,
+)
 from langchain.tools import tool
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from langgraph.graph.state import CompiledStateGraph
 from openai import AsyncOpenAI
 from pydantic import BaseModel, field_validator
@@ -218,6 +227,45 @@ generative = ChatOpenAI(
 )
 
 
+class HidePreviousToolResults(AgentMiddleware):
+    """
+    Show the model questions and final answers of earlier turns, not their tool calls.
+
+    Retrieved passages of every turn stay in the checkpoint, but sending the
+    old ones to the model would overflow its context in a few turns, and
+    their facts are already in the answers.
+    """
+
+    @staticmethod
+    def _hide(request: ModelRequest) -> ModelRequest:
+        messages = request.messages
+        last_human = max(
+            (i for i, m in enumerate(messages) if isinstance(m, HumanMessage)),
+            default=0,
+        )
+        previous_turns = [
+            m
+            for m in messages[:last_human]
+            if isinstance(m, HumanMessage)
+            or (isinstance(m, AIMessage) and not m.tool_calls)
+        ]
+        return request.override(messages=[*previous_turns, *messages[last_human:]])
+
+    def wrap_model_call(
+        self,
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelCallResult:
+        return handler(self._hide(request))
+
+    async def awrap_model_call(
+        self,
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+    ) -> ModelCallResult:
+        return await handler(self._hide(request))
+
+
 AGENT_NOT_INITIALIZED = "Agent is not initialized, call init_agent"
 CHECKPOINT_SCHEMA_OUTDATED = (
     "Checkpoint tables are at version {actual}, langgraph expects {expected}: "
@@ -225,6 +273,7 @@ CHECKPOINT_SCHEMA_OUTDATED = (
 )
 
 _agent: CompiledStateGraph | None = None
+_checkpointer: AsyncPostgresSaver | None = None
 
 
 async def _check_checkpoint_schema() -> None:
@@ -241,13 +290,20 @@ async def _check_checkpoint_schema() -> None:
 
 
 async def init_agent() -> None:
-    global _agent  # noqa: PLW0603
+    global _agent, _checkpointer  # noqa: PLW0603
     await _check_checkpoint_schema()
+    _checkpointer = AsyncPostgresSaver(
+        connection_pool,
+        # None restores only langgraph's SAFE_MSGPACK_TYPES, so a write to the
+        # checkpoint tables can't make the API import and call arbitrary code
+        serde=JsonPlusSerializer(allowed_msgpack_modules=None),
+    )
     _agent = create_agent(
         generative,
         [retrieve_knowledge],
         system_prompt=prompt,
-        checkpointer=AsyncPostgresSaver(connection_pool),
+        middleware=[HidePreviousToolResults()],
+        checkpointer=_checkpointer,
     )
 
 
@@ -255,3 +311,9 @@ def get_agent() -> CompiledStateGraph:
     if _agent is None:
         raise RuntimeError(AGENT_NOT_INITIALIZED)
     return _agent
+
+
+def get_checkpointer() -> AsyncPostgresSaver:
+    if _checkpointer is None:
+        raise RuntimeError(AGENT_NOT_INITIALIZED)
+    return _checkpointer
