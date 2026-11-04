@@ -1,18 +1,32 @@
-[tool.uv.workspace]
-members = ["apps/api", "apps/migrations"]
-
 [dependency-groups]
 dev = [
+    "prek>=0.5.10",
+    "pyproject-fmt>=2.30.3",
     "ruff>=0.15.20",
+    "rumdl>=0.3.2",
+    "ty>=0.0.96",
 ]
 
-[tool.ruff]
-src = ["apps/api/src", "apps/migrations"]
+[tool.uv.workspace]
+members = [ "apps/api", "apps/migrations" ]
 
-[tool.ruff.lint]
-select = ["ALL"]
-ignore = ["D1", "D200", "D202", "D203", "D212", "RET504", "COM812", "ANN401", "RUF001", "RUF002", "RUF003"]
+[tool.ruff]
+src = [ "apps/api/src", "apps/migrations" ]
 
 [tool.ruff.lint.per-file-ignores]
-"scripts/**" = ["INP001", "T201"]
-"apps/migrations/**" = ["INP001"]
+"scripts/**" = [ "INP001", "T201" ]
+"apps/migrations/**" = [ "INP001" ]
+
+[tool.ruff.lint]
+select = [ "ALL" ]
+ignore = [ "ANN401", "COM812", "D1", "D200", "D202", "D203", "D212", "RET504", "RUF001", "RUF002", "RUF003" ]
+
+[tool.pyproject-fmt]
+indent = 4
+keep_full_version = true
+generate_python_version_classifiers = false
+table_format = "long"
+sub_table_spacing = "\n"
+
+[tool.rumdl]
+disable = [ "MD013" ]

@@ -126,6 +126,6 @@ uv run alembic upgrade head
 ```
 
 Note: the psycopg async driver (used by both the vector store and the
-chat history) cannot run on the Windows proactor event loop that the plain
+checkpointer) cannot run on the Windows proactor event loop that the plain
 `fastapi run` entry point forces, so start the API locally with `fastapi dev`
 (or `uvicorn --reload`).
