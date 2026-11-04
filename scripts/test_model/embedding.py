@@ -6,7 +6,7 @@ payload = {
     "input": "Тест на русском",
 }
 
-resp = requests.post(url, json=payload)
+resp = requests.post(url, json=payload, timeout=60)
 resp.raise_for_status()
 data = resp.json()
 

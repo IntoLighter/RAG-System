@@ -11,8 +11,8 @@ src = ["apps/api/src", "apps/migrations"]
 
 [tool.ruff.lint]
 select = ["ALL"]
-ignore = ["D1", "D200", "D202", "D203", "D212", "RET504", "COM812", "ANN401"]
+ignore = ["D1", "D200", "D202", "D203", "D212", "RET504", "COM812", "ANN401", "RUF001", "RUF002", "RUF003"]
 
 [tool.ruff.lint.per-file-ignores]
-"scripts/**" = ["INP001"]
+"scripts/**" = ["INP001", "T201"]
 "apps/migrations/**" = ["INP001"]
