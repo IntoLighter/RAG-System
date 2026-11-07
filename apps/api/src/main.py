@@ -33,3 +33,8 @@ app.add_middleware(LoggingMiddleware)
 app.include_router(query.router)
 app.include_router(document.router)
 app.include_router(session.router)
+
+
+@app.get("/health", include_in_schema=False)
+async def health() -> dict[str, str]:
+    return {"status": "ok"}

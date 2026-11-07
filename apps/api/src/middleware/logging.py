@@ -9,6 +9,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from utils import elapsed_ms
 
 REQUEST_ID_HEADER = "X-Request-ID"
+SILENT_PATHS = frozenset({"/health"})
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):
@@ -20,6 +21,9 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
         """Bind a request id, time the request, and log the outcome."""
+        if request.url.path in SILENT_PATHS:
+            return await call_next(request)
+
         structlog.contextvars.clear_contextvars()
         request_id = request.headers.get(REQUEST_ID_HEADER) or str(uuid.uuid4())
         structlog.contextvars.bind_contextvars(

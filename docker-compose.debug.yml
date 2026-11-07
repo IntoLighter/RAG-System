@@ -15,8 +15,8 @@ services:
   api:
     command: ["sh", "-c", "pip install -q --upgrade --disable-pip-version-check --root-user-action=ignore debugpy -t /tmp && python -Xfrozen_modules=off /tmp/debugpy --wait-for-client --listen 0.0.0.0:5678 -m fastapi dev --entrypoint main:app --host 0.0.0.0 --port 8000"]
     restart: "no"
-    env_file: .env.debug    
+    env_file: .env.debug
     volumes:
       - ./apps/api/src:/app/src
     ports:
-      - 5678:5678
+      - 127.0.0.1:5678:5678
