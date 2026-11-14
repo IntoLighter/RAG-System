@@ -76,24 +76,39 @@ docker compose down
 
 ## Conversations
 
-Each query accepts an optional `session_id`. Omit it to start a new
-conversation; reuse the returned one to continue it:
+Start a conversation with its first message; the response contains the new
+`session_id`:
 
 ```bash
-curl -X POST http://localhost/query \
+curl -X POST http://localhost/sessions \
   -H 'Content-Type: application/json' \
   -d '{"message": "How do I deploy the service?"}'
 ```
 
+Continue it by sending messages to that session:
+
 ```bash
-curl -X POST http://localhost/query \
+curl -X POST http://localhost/sessions/<session_id>/messages \
   -H 'Content-Type: application/json' \
-  -d '{"message": "And in debug mode?", "session_id": "<session_id>"}'
+  -d '{"message": "And in debug mode?"}'
 ```
 
 The second call sees the previous messages: the user question and the final
 answer of every turn are stored in Postgres through an async psycopg connection
 pool and passed to the agent on the next request.
+
+Other session endpoints:
+
+| Method   | Path                              | Description                                          |
+|----------|-----------------------------------|------------------------------------------------------|
+| `GET`    | `/sessions?limit=&offset=`        | Sessions, most recently active first                 |
+| `GET`    | `/sessions/{id}?include_sources=` | History; with sources, the passages of every answer  |
+| `PATCH`  | `/sessions/{id}`                  | Rename: `{"title": "..."}`                           |
+| `POST`   | `/sessions/{id}/regenerate`       | Ask the last question again, replacing its answer    |
+| `DELETE` | `/sessions/{id}/messages/last`    | Remove the last question and its answer              |
+| `DELETE` | `/sessions/{id}`                  | Delete the session                                   |
+
+A turn that fails leaves the history as it was before it.
 
 ## Development
 

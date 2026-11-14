@@ -24,7 +24,7 @@ from pydantic import BaseModel, field_validator
 from dependency.db import connection_pool
 from dependency.settings import settings
 from dependency.vector_store import get_vector_store
-from schema.query import RetrievedChunk
+from schema.session import RetrievedChunk
 from utils import elapsed_ms
 
 logger = structlog.get_logger()
